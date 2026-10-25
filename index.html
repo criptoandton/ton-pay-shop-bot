@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TON Pay Shop Bot — магазин подписки с оплатой криптой</title>
+<meta name="description" content="Демо Telegram-магазина: оплата подписки в TON, автопроверка транзакции, автовыдача доступа, реферальная программа.">
+<style>
+:root{--bg:#0a0d14;--card:#131a26;--line:#232e42;--txt:#eaf0fb;--mut:#92a1ba;--acc:#7dd3fc;--acc2:#a78bfa;--ok:#4ade80}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:26px 16px 60px}
+.wrap{max-width:880px;margin:0 auto}
+.badge{display:inline-block;padding:5px 12px;border:1px solid var(--line);border-radius:999px;color:var(--acc);font-size:12px;background:rgba(125,211,252,.07)}
+h1{font-size:clamp(24px,5.4vw,38px);letter-spacing:-.03em;margin:16px 0 10px;line-height:1.1}
+.lead{color:var(--mut);max-width:62ch;margin:0 0 24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+h2{font-size:17px;margin:0 0 14px}
+.plans{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.plan{background:#0e1520;border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;transition:.18s;text-align:left;color:var(--txt);font-family:inherit}
+.plan:hover{border-color:var(--acc);transform:translateY(-2px)}
+.plan.sel{border-color:var(--acc);background:rgba(125,211,252,.09)}
+.plan b{display:block;font-size:15px}
+.plan .pr{font-size:20px;font-weight:800;margin-top:6px;letter-spacing:-.02em}
+.plan .pr span{font-size:12px;color:var(--mut);font-weight:500}
+label{display:block;font-size:13px;color:var(--mut);margin:14px 0 6px}
+input,select{width:100%;padding:13px 14px;border-radius:11px;border:1px solid var(--line);background:#0b1119;color:var(--txt);font-size:14px;font-family:ui-monospace,Menlo,monospace}
+button{margin-top:14px;width:100%;padding:13px;border:0;border-radius:11px;background:linear-gradient(95deg,var(--acc),var(--acc2));color:#07131f;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit}
+.out{margin-top:14px;padding:15px;border-radius:12px;background:#0b1119;border:1px solid var(--line);font-family:ui-monospace,Menlo,monospace;font-size:13px;white-space:pre-wrap;min-height:76px;color:var(--mut)}
+.steps{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));counter-reset:s}
+.steps div{background:#0e1520;border:1px solid var(--line);border-radius:13px;padding:15px;position:relative}
+.steps div:before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:rgba(125,211,252,.14);color:var(--acc);font-weight:800;font-size:13px;margin-bottom:10px}
+.steps b{font-size:14.5px;display:block;margin-bottom:4px}
+.steps p{margin:0;color:var(--mut);font-size:13.5px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);color:var(--mut)}
+th{color:var(--txt)}
+code{background:#0b1119;padding:2px 6px;border-radius:6px;color:var(--acc);font-size:12px}
+.foot{color:var(--mut);font-size:12.5px;text-align:center;margin-top:24px}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<span class="badge">ДЕМО · кейс №2 · симуляция оплаты в TON</span>
+<h1>TON Pay Shop Bot</h1>
+<p class="lead">Магазин подписки с оплатой криптой: покупатель платит TON, бот ждёт подтверждения транзакции в сети и сам открывает доступ. Здесь можно пройти весь путь — выбрать тариф, увидеть счёт и получить доступ.</p>
+
+<div class="card">
+<h2>Как это работает</h2>
+<div class="steps">
+<div><b>Витрина тарифов</b><p>Месяц, 3 месяца, год — кнопки в боте.</p></div>
+<div><b>Счёт на оплату</b><p>Адрес кошелька и комментарий для сверки.</p></div>
+<div><b>Проверка сети</b><p>Хеш транзакции сверяется с суммой и комментарием.</p></div>
+<div><b>Доступ</b><p>Инвайт-ссылка выдаётся сразу, подписка продлевается.</p></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Выберите тариф</h2>
+<div class="plans" id="plans"></div>
+<label for="addr">Адрес кошелька покупателя</label>
+<input id="addr" value="EQDemo_Buyer_2222222222222222222222" autocomplete="off">
+<button id="go">Оплатить и получить доступ</button>
+<div class="out" id="out">Выберите тариф и нажмите «Оплатить».</div>
+</div>
+
+<div class="card">
+<h2>Что происходит после оплаты</h2>
+<table>
+<tr><th>Событие</th><th>Что делает бот</th></tr>
+<tr><td>Транзакция в сети</td><td>Находит по адресу и сверяет сумму</td></tr>
+<tr><td>1 подтверждение</td><td>Считает оплату подтверждённой</td></tr>
+<tr><td>Выдача доступа</td><td>Отправляет одноразовую инвайт-ссылку</td></tr>
+<tr><td>Продление</td><td>Добавляет дни к остатку подписки</td></tr>
+<tr><td>Реферал</td><td>Начисляет 10% и +7 дней приглашённому</td></tr>
+</table>
+</div>
+
+<p class="foot">Демо-кошелёк (testnet): <code>0QDD5oX4cPlW5ecZp2JUnJkllw1UejzjM5kXUJVyd87O9pKV</code> · монеты не имеют реальной ценности.<br>
+Код: <a href="https://github.com/criptoandton/ton-pay-shop-bot">github.com/criptoandton/ton-pay-shop-bot</a></p>
+</div>
+<script>
+const PLANS={month:{l:"Месяц",p:4.9,d:30},quarter:{l:"3 месяца",p:12.9,d:90},year:{l:"Год",p:39.9,d:365}};
+const $=i=>document.getElementById(i);
+let sel="month";
+function render(){ $("plans").innerHTML=Object.keys(PLANS).map(k=>{
+ const p=PLANS[k];return '<button class="plan '+(k===sel?"sel":"")+'" data-k="'+k+'"><b>'+p.l+'</b><div class="pr">'+p.p.toFixed(2)+' TON <span>/ '+p.d+' дн.</span></div></button>';
+}).join(""); $("plans").querySelectorAll(".plan").forEach(b=>b.onclick=()=>{sel=b.dataset.k;render();});}
+render();
+$("go").onclick=()=>{
+ const o=$("out"),addr=$("addr").value.trim();
+ if(!addr){o.textContent="Введите адрес кошелька.";o.style.color="#fbbf24";return;}
+ const p=PLANS[sel];
+ o.textContent="Создаю счёт…";o.style.color="var(--mut)";
+ setTimeout(()=>{
+  o.textContent="🧾 Счёт на "+p.p.toFixed(2)+" TON\nКошелёк: 0QDD5oX4cPlW5ecZp2JUnJkllw1UejzjM5kXUJVyd87O9pKV\nКомментарий: inv_"+sel+"_"+Math.floor(Math.random()*8999+1000)+"\n\nОжидаю транзакцию…";
+  setTimeout(()=>{
+   const exp=new Date(Date.now()+p.d*86400000).toLocaleDateString("ru-RU");
+   o.textContent="✅ Оплата подтверждена, доступ открыт\n\nТариф: "+p.l+"\nДействует до: "+exp+"\n\nСсылка в закрытый канал:\nhttps://t.me/+example_paid_channel_invite\n\nПодписка продлится при следующей оплате.";
+   o.style.color="var(--ok)";
+  },1800);
+ },700);
+};
+</script>
+</body></html>
